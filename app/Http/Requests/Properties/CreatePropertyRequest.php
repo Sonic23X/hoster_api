@@ -29,6 +29,8 @@ class CreatePropertyRequest extends FormRequest
             'owner_id' => 'exists:App\Models\User,uuid',
             'title' => 'required|string|max:80',
             'address' => 'required|string|max:80',
+            'longitude' => 'required|string',
+            'latitude' => 'required|string',
             'rooms' => 'required|integer',
             'beds' => 'required|integer',
             'bathrooms' => 'required|integer',

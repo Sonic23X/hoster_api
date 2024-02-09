@@ -18,6 +18,7 @@ class PropertyResource extends JsonResource
         foreach ($this->images as $image) {
             $images->push([
                 'uuid' => $image->uuid,
+                'name' => $image->name,
                 'url' => url('') . '/storage/' . $image->storage
             ]);
         }
@@ -25,6 +26,7 @@ class PropertyResource extends JsonResource
         if ($images->isEmpty()) {
             $images->push([
                 'uuid' => 'no-image',
+                'name' => 'No image',
                 'url' => 'assets/images/ui/angular-material/scenes/badge.scene.png'
             ]);
         }
@@ -40,6 +42,8 @@ class PropertyResource extends JsonResource
             ],
             'title' => $this->title,
             'address' => $this->address,
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
             'rooms' => $this->rooms,
             'beds' => $this->beds,
             'bathrooms' => $this->bathrooms,

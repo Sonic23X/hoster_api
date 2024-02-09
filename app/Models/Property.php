@@ -30,6 +30,8 @@ class Property extends Model
         'owner_id',
         'title',
         'address',
+        'latitude',
+        'longitude',
         'rooms',
         'beds',
         'bathrooms',

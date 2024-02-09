@@ -26,15 +26,17 @@ class UpdatePropertyRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => 'required|string|max:80',
-            'address' => 'required|string|max:80',
-            'rooms' => 'required|integer',
-            'beds' => 'required|integer',
-            'bathrooms' => 'required|integer',
-            'about' => 'required|string|max:255',
-            'additional_information' => 'required|string|max:255',
-            'security' => 'required|string|max:255',
-            'arrive' => 'required|string|max:255',
+            'title' => 'string|max:80',
+            'address' => 'string|max:80',
+            'longitude' => 'string',
+            'latitude' => 'string',
+            'rooms' => 'integer',
+            'beds' => 'integer',
+            'bathrooms' => 'integer',
+            'about' => 'string|max:255',
+            'additional_information' => 'string|max:255',
+            'security' => 'string|max:255',
+            'arrive' => 'string|max:255',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
             'services' => 'array',
             'services.*' => 'string|max:40'

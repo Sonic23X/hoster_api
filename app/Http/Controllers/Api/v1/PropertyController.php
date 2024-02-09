@@ -106,20 +106,22 @@ class PropertyController extends Controller
         $data = $request->except(['images', 'services']);
         $property->update($data);
 
-        PropertyService::where('property_id', $property->id)->delete();
-        $services = $request->services;
+        if ($request->services != null) {
+            PropertyService::where('property_id', $property->id)->delete();
+            $services = $request->services;
 
-        foreach ($services as $serviceRequest) {
-            $service = Service::where('uuid', $serviceRequest)->first();
+            foreach ($services as $serviceRequest) {
+                $service = Service::where('uuid', $serviceRequest)->first();
 
-            if ($service == null) {
-                continue;
+                if ($service == null) {
+                    continue;
+                }
+
+                PropertyService::create([
+                    'property_id' => $property->id,
+                    'service_id' => $service->id
+                ]);
             }
-
-            PropertyService::create([
-                'property_id' => $property->id,
-                'service_id' => $service->id
-            ]);
         }
 
         if ($request->hasFile('images')) {
@@ -138,7 +140,7 @@ class PropertyController extends Controller
                 PropertyImage::create([
                     'property_id' => $property->id,
                     'name' => $imageName,
-                    'storage' => 'public/property_images/' . $property->uuid . '/' . $imageName,
+                    'storage' => 'property_images/' . $property->uuid . '/' . $imageName,
                 ]);
             }
         }

@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('properties', function (Blueprint $table) {
-            $table->string('longitude')->nullable();
-            $table->string('latitude')->nullable();
+            $table->string('longitude')->nullable()->after('address');
+            $table->string('latitude')->nullable()->after('longitude');
         });
     }
 
