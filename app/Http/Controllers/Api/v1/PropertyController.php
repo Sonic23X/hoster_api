@@ -3,17 +3,21 @@
 namespace App\Http\Controllers\Api\v1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Properties\AddUserToPropertyRequest;
 use App\Http\Requests\Properties\CreatePropertyRequest;
 use App\Http\Requests\Properties\UpdatePropertyRequest;
 use App\Http\Resources\PropertyResource;
+use App\Http\Resources\UserResource;
+use App\Http\Resources\UsersComboResource;
 use App\Models\Property;
 use App\Models\PropertyImage;
 use App\Models\PropertyService;
+use App\Models\PropertyStockholder;
 use App\Models\Service;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class PropertyController extends Controller
 {
@@ -176,25 +180,126 @@ class PropertyController extends Controller
         return response()->json(['message' => 'Property deleted successfully'], 200);
     }
 
-    function myProperties(): JsonResponse
+    public function getUsers(string $uuid): JsonResponse
     {
-        $properties = collect([]);
-        if (Auth::user()->hasRole('superadmin') || Auth::user()->hasRole('partner')) {
-            $properties = Auth::user()->properties()->with(['owner', 'images', 'services'])->get();
+        $property = Property::where('uuid', $uuid)->first();
+
+        if ($property == null) {
+            return response()->json([
+                'message' => 'Property not found'
+            ], 404);
         }
 
-        if (Auth::user()->hasRole('user')) {
-            $properties = Auth::user()->properties()->with(['owner', 'images', 'services'])->get();
-            $stockholderProperties = Property::whereHas('stockholders', function ($query) {
-                $query->where('user_id', Auth::user()->id);
-            })->with(['owner', 'images', 'services'])->get();
+        $stockholders = PropertyStockholder::where('property_id', $property->id)
+                    ->with('user')->get();
 
-            $properties = $properties->merge($stockholderProperties);
-        }
-
+        $users = $stockholders->map(function ($stockholder) {
+            return $stockholder->user;
+        });
 
         return response()->json([
-            'properties' => PropertyResource::collection(($properties))
+            'users' => UserResource::collection($users)
         ], 200);
+    }
+
+    public function getAvailableUsers(string $uuid): JsonResponse {
+        $property = Property::where('uuid', $uuid)->first();
+
+        if ($property == null) {
+            return response()->json([
+                'message' => 'Property not found'
+            ], 404);
+        }
+
+        $stockholders = PropertyStockholder::where('property_id', $property->id)
+                    ->with('user')->get();
+
+        $previusUsers = $stockholders->map(function ($stockholder) {
+            return $stockholder->user->id;
+        });
+
+        $users = null;
+        if (Auth::user()->hasRole('superadmin')) {
+            $users = User::whereNotIn('id', $previusUsers)->get();
+        } else if (Auth::user()->hasRole('partner')) {
+            $users = User::whereNotIn('id', $previusUsers)
+                    ->where('user_by_id', Auth::user()->id)->get();
+        }
+
+        $users = $users->filter(function ($user) use ($property) {
+            return $user->id != $property->owner_id;
+        });
+
+        return response()->json([
+            'users' => UsersComboResource::collection($users)
+        ], 200);
+    }
+
+    public function addUser(AddUserToPropertyRequest $request, string $uuid): JsonResponse
+    {
+        $property = Property::where('uuid', $uuid)->first();
+
+        if ($property == null) {
+            return response()->json([
+                'message' => 'Property not found'
+            ], 404);
+        }
+
+        $user = User::where('uuid', $request->user_id)->first();
+
+        if ($user == null) {
+            return response()->json([
+                'message' => 'User not found'
+            ], 404);
+        }
+
+        if (PropertyStockholder::where('property_id', $property->id)
+                ->where('user_id', $user->id)->exists()) {
+            return response()->json(['message' => 'The property is already assigned to the user'], 400);
+        }
+
+        $validation = PropertyStockholder::where('property_id', $property->id)->get();
+        if ($validation->count() >= 8) {
+            return response()->json(['message' => 'The property has already 8 stockholders'], 400);
+        }
+
+        PropertyStockholder::create([
+            'property_id' => $property->id,
+            'user_id' => $user->id,
+        ]);
+
+        return response()->json(['message' => 'Property assigned successfully'], 200);
+    }
+
+    public function removeUser(string $uuid, string $userUuid): JsonResponse
+    {
+        $property = Property::where('uuid', $uuid)->first();
+
+        if ($property == null) {
+            return response()->json([
+                'message' => 'Property not found'
+            ], 404);
+        }
+
+        $user = User::where('uuid', $userUuid)->first();
+
+        if ($user == null) {
+            return response()->json([
+                'message' => 'User not found'
+            ], 404);
+        }
+
+        $stockholder = PropertyStockholder::where('property_id', $property->id)
+                    ->where('user_id', $user->id)->first();
+
+        if ($stockholder == null) {
+            return response()->json([
+                'message' => 'User not found in property'
+            ], 404);
+        }
+
+        $stockholder->delete();
+
+        return response()->json(['message' => 'User removed from property successfully'], 200);
     }
 }

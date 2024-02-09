@@ -8,12 +8,13 @@ use App\Http\Requests\Users\CreateUserRequest;
 use App\Http\Requests\Users\UpdateUserRequest;
 use App\Http\Resources\UserResource;
 use App\Http\Resources\UsersComboResource;
+use App\Http\Resources\PropertyResource;
 use App\Models\User;
 use App\Models\Property;
 use App\Models\PropertyStockholder;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 
 class UsersController extends Controller
 {
@@ -194,24 +195,25 @@ class UsersController extends Controller
         return response()->json(['users' => UsersComboResource::collection($users)], 200);
     }
 
-    function assignPropertyToStockholder(AssignPropertyToStockholder $request) : JsonResponse {
-        $user = User::where('uuid', $request->user_id)->first();
-        $property = Property::where('uuid', $request->property_id)->first();
-
-        if (PropertyStockholder::where('property_id', $property->id)->where('user_id', $user->id)->exists()) {
-            return response()->json(['message' => 'The property is already assigned to the user'], 400);
+    function myProperties(): JsonResponse
+    {
+        $properties = collect([]);
+        if (Auth::user()->hasRole('superadmin') || Auth::user()->hasRole('partner')) {
+            $properties = Auth::user()->properties()->with(['owner', 'images', 'services'])->get();
         }
 
-        $validation = PropertyStockholder::where('property_id', $property->id)->get();
-        if ($validation->count() >= 8) {
-            return response()->json(['message' => 'The property has already 8 stockholders'], 400);
+        if (Auth::user()->hasRole('user')) {
+            $properties = Auth::user()->properties()->with(['owner', 'images', 'services'])->get();
+            $stockholderProperties = Property::whereHas('stockholders', function ($query) {
+                $query->where('user_id', Auth::user()->id);
+            })->with(['owner', 'images', 'services'])->get();
+
+            $properties = $properties->merge($stockholderProperties);
         }
 
-        PropertyStockholder::create([
-            'property_id' => $property->id,
-            'user_id' => $user->id,
-        ]);
 
-        return response()->json(['message' => 'Property assigned successfully'], 200);
+        return response()->json([
+            'properties' => PropertyResource::collection(($properties))
+        ], 200);
     }
 }

@@ -26,12 +26,14 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::post('properties', [PropertyController::class, 'store'])->name('store');
     Route::post('properties/{uuid}', [PropertyController::class, 'update'])->name('update');
     Route::delete('properties/{uuid}', [PropertyController::class, 'destroy'])->name('destroy');
+    Route::get('properties/{uuid}/users', [PropertyController::class, 'getUsers'])->name('users');
+    Route::post('properties/{uuid}/users', [PropertyController::class, 'addUser'])->name('addUser');
+    Route::get('properties/{uuid}/users/available', [PropertyController::class, 'getAvailableUsers'])->name('availableUsers');
+    Route::delete('properties/{uuid}/users/{userUuid}', [PropertyController::class, 'removeUser'])->name('removeUser');
 
-    Route::get('me/properties', [PropertyController::class, 'myProperties'])->name('myProperties');
-    //Route::get('me/users', [PropertyController::class, 'myProperties'])->name('myProperties');
+    Route::get('me/properties', [UsersController::class, 'myProperties'])->name('myProperties');
 
     Route::get('users/combo/{option?}', [UsersController::class, 'usersCombo'])->name('users.combo');
-    Route::post('users/assignProperty', [UsersController::class, 'assignPropertyToStockholder'])->name('users.assignPropertyToStockholder');
     Route::resource('users', UsersController::class);
 
     Route::resource('services', ServicesController::class);
