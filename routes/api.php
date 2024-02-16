@@ -1,10 +1,10 @@
 <?php
 
 use App\Http\Controllers\Api\v1\PropertyController;
+use App\Http\Controllers\Api\v1\ReservationController;
 use App\Http\Controllers\Api\V1\ServicesController;
 use App\Http\Controllers\Api\v1\UsersController;
 use Illuminate\Support\Facades\Route;
-use Spatie\Permission\Contracts\Role;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,9 +32,15 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::delete('properties/{uuid}/users/{userUuid}', [PropertyController::class, 'removeUser'])->name('removeUser');
 
     Route::get('me/properties', [UsersController::class, 'myProperties'])->name('myProperties');
+    Route::get('me/reservations', [ReservationController::class, 'getMyReservations'])->name('myReservations');
 
     Route::get('users/combo/{option?}', [UsersController::class, 'usersCombo'])->name('users.combo');
     Route::resource('users', UsersController::class);
 
     Route::resource('services', ServicesController::class);
+
+    Route::get('reservations/{uuid}', [ReservationController::class, 'getReservations'])->name('getReservations');
+    Route::get('reservation/{uuid}', [ReservationController::class, 'show'])->name('show');
+    Route::post('reservations', [ReservationController::class, 'store'])->name('store');
+    Route::delete('reservations/{uuid}', [ReservationController::class, 'destroy'])->name('destroy');
 });

@@ -31,6 +31,8 @@ class Reservation extends Model
         'check_out',
         'confirmation_code',
         'status',
+        'rules',
+        'is_free',
         'cancel_date'
     ];
 
@@ -55,6 +57,8 @@ class Reservation extends Model
         'check_in' => 'datetime',
         'check_out' => 'datetime',
         'cancel_date' => 'datetime',
+        'is_free' => 'boolean',
+        'rules' => 'boolean'
     ];
 
     /**
