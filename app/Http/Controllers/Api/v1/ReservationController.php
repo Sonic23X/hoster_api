@@ -74,8 +74,9 @@ class ReservationController extends Controller
             ], 400);
         }
 
-        // Reglas hoster
-        if (true) {
+        // Reglas hoster - reservaciones libres dentro de los 28 días
+        $limit = date('Y-m-d', strtotime($today . ' + 27 day'));
+        if ($request->check_in >= $limit) {
             $previusReservations = Reservation::where('user_id', $user->id)
                 ->where('status', 'activo')
                 ->where('is_free', false)
